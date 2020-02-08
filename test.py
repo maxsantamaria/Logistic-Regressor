@@ -95,7 +95,14 @@ def main():
     test_white_x, test_white_y      = load_data('hw2_winequality-white_test.npy')
     
     w = np.array([1] * 11).reshape(-1, 1)
-    print(np.dot(train_red_x[0, :].reshape(1, -1), w))
+
+    #print(np.dot(train_red_x[0, :].reshape(1, -1), w))
+
+    k = train_red_x.shape[1]
+    w = np.random.randn(k + 1, 1)
+
+
+    SGDSolver(train_red_x, w, train_red_y)
 
     """ USING SVM, y has to be a 1d array (samples,)
     clf = svm.SVC()
