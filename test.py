@@ -23,13 +23,14 @@ def red_wine_run(train_red_x, train_red_y, test_red_x, test_red_y):
     # Red wine data
     print('---------------\nRed Wine Data\n---------------')
 
+    k = train_red_x.shape[1]
     # Training Phase
     # values for 2D-grid search
     lam     = []        # regularization weight [min, max]
     alpha   = []        # learning rate [min, max]
     nepochs = []        # sample # of epochs
     epsilon = 0.0       # epsilon value
-    param   = []
+    param   = np.random.randn(k + 1, 1)
     # end TODO
 
     # using this alpha and lambda values run the training
@@ -44,7 +45,7 @@ def red_wine_run(train_red_x, train_red_y, test_red_x, test_red_y):
     # Note: validation and testing phases only take a single value for (alpha, lam) and not a list. 
     # Validation Phase
     x_mse_val = SGDSolver('Validation', test_red_x, test_red_y, alpha, lam, nepochs, epsilon, param)
-    print(f"Current Red Wine Data MSE is: {mse_val}.")
+    print(f"Current Red Wine Data MSE is: {x_mse_val}.")
 
     # Testing Phase
     red_wine_predicted = SGDSolver('Testing', test_red_x, test_red_y, alpha, lam, nepochs, epsilon, param)
@@ -96,13 +97,20 @@ def main():
     
     w = np.array([1] * 11).reshape(-1, 1)
 
+
+
     #print(np.dot(train_red_x[0, :].reshape(1, -1), w))
 
     k = train_red_x.shape[1]
     w = np.random.randn(k + 1, 1)
+   
 
 
-    SGDSolver(train_red_x, w, train_red_y)
+    #w, alpha, lamb = SGDSolver("Training", train_red_x, train_red_y, 0, 0, 1000, 0.0001, w)
+    #print(SGDSolver("Validation", test_red_x, test_red_y, 0, 0, 1000, 0.0001, w))
+    #print(SGDSolver("Testing", test_red_x, test_red_y, 0, 0, 1000, 0.0001, w))
+    
+    #SGDSolver(train_white_x, w, train_white_y)
 
     """ USING SVM, y has to be a 1d array (samples,)
     clf = svm.SVC()
@@ -111,7 +119,7 @@ def main():
     """
 
     # Tests
-    #red_wine_run(train_red_x, train_red_y, test_red_x, test_red_y)
+    red_wine_run(train_red_x, train_red_y, test_red_x, test_red_y)
     #white_wine_run(train_white_x, train_white_y, test_white_x, test_white_y)
 
 if __name__ == "__main__":
