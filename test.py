@@ -1,6 +1,7 @@
 import numpy as np
 from sgd import SGDSolver
 from sklearn import svm
+from sgd import SVMSolver
 
 
 def load_data(filename):
@@ -26,9 +27,9 @@ def red_wine_run(train_red_x, train_red_y, test_red_x, test_red_y):
     k = train_red_x.shape[1]
     # Training Phase
     # values for 2D-grid search
-    lam     = []        # regularization weight [min, max]
-    alpha   = []        # learning rate [min, max]
-    nepochs = []        # sample # of epochs
+    lam     = [0.000001, 0.001]        # regularization weight [min, max]
+    alpha   = [0.0001, 0.01]        # learning rate [min, max]
+    nepochs = 1000          # sample # of epochs
     epsilon = 0.0       # epsilon value
     param   = np.random.randn(k + 1, 1)
     # end TODO
@@ -57,14 +58,15 @@ def white_wine_run(train_white_x, train_white_y, test_white_x, test_white_y):
     # White wine data
     print('---------------\nWhite Wine Data\n---------------')
 
+    k = train_white_x.shape[1]
     # TODO: Change hyperparameter values here as needed 
     # similar to red_wine_run
     # values for 2D-grid search
-    lam     = []        # regularization weight [min, max]
-    alpha   = []        # learning rate [min, max]
-    nepochs = []        # sample # of epochs
+    lam     = [0.000001, 0.001]        # regularization weight [min, max]
+    alpha   = [0.0001, 0.01]        # learning rate [min, max]
+    nepochs = 1000        # sample # of epochs
     epsilon = 0.0       # epsilon value
-    param   = []
+    param   = np.random.randn(k + 1, 1)
     # end TODO
 
     # Training Phase
@@ -79,7 +81,7 @@ def white_wine_run(train_white_x, train_white_y, test_white_x, test_white_y):
     # Note: validation and testing phases only take a single value for (alpha, lam) and not a list. 
     # Validation Phase
     x_mse_val = SGDSolver('Validation', test_white_x, test_white_y, alpha, lam, nepochs, epsilon, param)
-    print(f"Current White Wine Data MSE is: {mse_val}.")
+    print(f"Current White Wine Data MSE is: {x_mse_val}.")
 
     # Testing Phase
     white_wine_predicted = SGDSolver('Testing', test_white_x, test_white_y, alpha, lam, nepochs, epsilon, param)
@@ -103,10 +105,14 @@ def main():
 
     k = train_red_x.shape[1]
     w = np.random.randn(k + 1, 1)
-   
 
 
-    #w, alpha, lamb = SGDSolver("Training", train_red_x, train_red_y, 0, 0, 1000, 0.0001, w)
+    
+
+    
+    #w, alpha, lamb = SGDSolver("Training", train_red_x, train_red_y, [0.0001, 0.01], [0.000001, 0.001], 1000, 0.0001, w)
+    
+    #return
     #print(SGDSolver("Validation", test_red_x, test_red_y, 0, 0, 1000, 0.0001, w))
     #print(SGDSolver("Testing", test_red_x, test_red_y, 0, 0, 1000, 0.0001, w))
     
@@ -116,6 +122,12 @@ def main():
     clf = svm.SVC()
     clf.fit(train_red_x, train_red_y)
     print(clf.predict(train_red_x[0, :].reshape(1, -1)))
+    """
+    """ SVM
+    clfs = SVMSolver('Training', train_red_x, train_red_y)
+    mse = SVMSolver('Validation', test_red_x, test_red_y, clfs)
+    print(mse)
+    print(SVMSolver('Testing', test_red_x, test_red_y, clfs))
     """
 
     # Tests

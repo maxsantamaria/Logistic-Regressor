@@ -1,4 +1,8 @@
 import numpy as np
+from sklearn import svm
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.metrics import confusion_matrix 
+from sklearn.metrics import accuracy_score 
 
 
 def sigmoid(z):  # z = xT * w
@@ -60,11 +64,18 @@ def SGD(x, y, alpha, lambd, nepoch, epsilon, w):
 	loss_history = [loss(x, y, w, lambd)[0][0]]
 	w_history = []
 	for i in range(nepoch):
+		data = np.append(x, y, axis=1)
+		np.random.shuffle(data)
+		#x = data[:,:k+1]
+		#y = data[:,k+1:]
 		w = w - (alpha) * loss_derivative(x, y, w, lambd)
+
 		loss_history.append(loss(x, y, w, lambd)[0][0])
-	#print(loss_history[-1])
+		if loss_history[-1] < epsilon:
+			break
+	#print(loss_history)
 	#print(w)
-	return w
+	return w, loss_history[-1]
 	#print(predict(x[11, :], w))
 
 
@@ -79,17 +90,30 @@ def SGDSolver(phase, x, y, alpha_range=0, lam_range=0, nepochs=1000, epsilon=0.0
 	if phase == "Training":
 		w = np.array(w).reshape(-1, 1)
 		y_aux = transform_y(y, 2)
-		#print(loss(sigmoid(f(x, w)), y))
-		#print(loss(x, y, w))
-		w2 = SGD(x, y_aux, 0.01, 0.00001, 1000, 0, w)
-		
+		min_loss = 10**10
+		best_param2 = w
+		for alpha in np.logspace(np.log10(alpha_range[0]), np.log10(alpha_range[1]), 5):  # Logaritmic Scale
+			#print('\nNEW LEARNING RATE ', alpha)
+			for lambd in np.logspace(np.log10(lam_range[0]), np.log10(lam_range[1]), 5):
+				#print('\tNEW LAMBDA ', lambd)
+				w2, loss = SGD(x, y_aux, alpha, lambd, nepochs, 0, w)
+				#print(loss)
+				if loss < min_loss:
+					min_loss = loss
+					best_param = w2
+					best_alpha = alpha
+					best_lambd = lambd
+		w2 = best_param
+
+		#return w2, best_alpha, best_lambd
+
 		y_aux = transform_y(y, 1)
-		w1 = SGD(x, y_aux, 0.01, 0.00001, 1000, 0, w)
+		w1, loss = SGD(x, y_aux, best_alpha, best_lambd, 1000, 0, w)
 
 		y_aux = transform_y(y, 0)
-		w0 = SGD(x, y_aux, 0.01, 0.00001, 1000, 0, w)
+		w0, loss = SGD(x, y_aux, best_alpha, best_lambd, 1000, 0, w)
 
-		return [w0, w1, w2], 0.01, 0.00001
+		return [w0, w1, w2], best_alpha, best_lambd
 
 		predicted_y = predict(x, [w0, w1, w2])
 		#for i in range(len(predicted_y)):
@@ -98,8 +122,6 @@ def SGDSolver(phase, x, y, alpha_range=0, lam_range=0, nepochs=1000, epsilon=0.0
 		return MSE(x, y, w)
 	elif phase == "Testing":
 		return predict(x, w)
-
-
 
 
 def normalize(x):
@@ -155,6 +177,63 @@ def best_correlation(x, w):
 	return x, w
 
 
+def SVMSolver(phase, x, y, clfs=[]):
+	n = x.shape[0]
+	x = normalize(x)
+	x = np.hstack((np.array([1] * n)[:, np.newaxis], x))  # Add a column of 1s
+	y = convert_y(y)
+	if phase == "Training":
+		clf2 = svm.SVC(kernel='linear')
+		y_aux = transform_y(y, 2)
+		clf2.fit(x, y_aux.ravel())
+
+		clf1 = svm.SVC(kernel='linear')
+		y_aux = transform_y(y, 1)
+		clf1.fit(x, y_aux.ravel())
+
+		clf0 = svm.SVC(kernel='linear')
+		y_aux = transform_y(y, 0)
+		clf0.fit(x, y_aux.ravel())
+
+		print(clf2.predict(x[0, :].reshape(1, -1)))
+		print(clf1.predict(x[0, :].reshape(1, -1)))
+		print(clf0.predict(x[0, :].reshape(1, -1)))
+
+		#clf = OneVsRestClassifier(svm.SVC(kernel='linear')).fit(x, y)
+		#for i in range(n):
+		#	print(clf0.predict(x[i, :].reshape(1, -1)), clf1.predict(x[i, :].reshape(1, -1)), clf2.predict(x[i, :].reshape(1, -1)), end=" ")
+		#	print(y[i])
+		return [clf0, clf1, clf2]
+	elif phase == "Validation":
+		total = 0
+		for i in range(n):
+			for index, clf in enumerate(clfs):
+				prediction = clf.predict(x[i, :].reshape(1, -1))
+				if prediction[0] == 1:
+					break
+			total += np.square(y[i] - prediction)
+		return total / n
+
+	elif phase == "Testing":
+		prediction_array = np.zeros(y.shape)
+		for i in range(n):
+			for index, clf in enumerate(clfs):
+				prediction = clf.predict(x[i, :].reshape(1, -1))
+				if prediction[0] == 1:
+					break
+			prediction_array[i] = prediction
+		
+		print(confusion_matrix(y, prediction_array))
+		print(accuracy_score(y, prediction_array))
+		return prediction_array
+
+		
+
+
+	
+
+def predict_SVM(clf):
+	pass
 
 
 if __name__ == '__main__':
