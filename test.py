@@ -123,14 +123,24 @@ def main():
     clf.fit(train_red_x, train_red_y)
     print(clf.predict(train_red_x[0, :].reshape(1, -1)))
     """
-    """ SVM
-    clfs = SVMSolver('Training', train_red_x, train_red_y)
-    mse = SVMSolver('Validation', test_red_x, test_red_y, clfs)
-    print(mse)
-    print(SVMSolver('Testing', test_red_x, test_red_y, clfs))
-    """
+    
+    '''PARTITIONS FOR COMPARISON
+    train_partitions_x = np.array_split(train_white_x, 5)
+    train_partitions_y = np.array_split(train_white_y, 5)
+    test_partitions_x = np.array_split(test_white_x, 5)
+    test_partitions_y = np.array_split(test_white_y, 5)
+    
+    for i in range(5):
+        clfs = SVMSolver('Training', train_partitions_x[i], train_partitions_y[i])
+        mse = SVMSolver('Validation', test_partitions_x[i], test_partitions_y[i], clfs)
+        print(mse)
+        print(SVMSolver('Testing', test_partitions_x[i], test_partitions_y[i], clfs))
+    #for i in range(5):
+    #    white_wine_run(train_partitions_x[i], train_partitions_y[i], test_partitions_x[i], test_partitions_y[i])
+    '''
 
     # Tests
+    
     red_wine_run(train_red_x, train_red_y, test_red_x, test_red_y)
     #white_wine_run(train_white_x, train_white_y, test_white_x, test_white_y)
 

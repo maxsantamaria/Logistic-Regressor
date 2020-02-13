@@ -58,7 +58,7 @@ def predict(x, params):  # Params in order [w0, w1, w2]
 	#return np.round(sigmoid(z(x, w)))  # 0 or 1
 
 
-def SGD(x, y, alpha, lambd, nepoch, epsilon, w):
+def SGD(x, y, alpha, lambd, nepoch, epsilon, w, to_zero):
 	n = x.shape[0]
 	k = x.shape[1] - 1
 	loss_history = [loss(x, y, w, lambd)[0][0]]
@@ -69,6 +69,7 @@ def SGD(x, y, alpha, lambd, nepoch, epsilon, w):
 		#x = data[:,:k+1]
 		#y = data[:,k+1:]
 		w = w - (alpha) * loss_derivative(x, y, w, lambd)
+		w = adjust_w(w, to_zero)
 
 		loss_history.append(loss(x, y, w, lambd)[0][0])
 		if loss_history[-1] < epsilon:
@@ -81,7 +82,7 @@ def SGD(x, y, alpha, lambd, nepoch, epsilon, w):
 
 
 def SGDSolver(phase, x, y, alpha_range=0, lam_range=0, nepochs=1000, epsilon=0.001, w=0):
-	#x, w = best_correlation(x, w) LATER
+	to_zero = best_correlation(x, w)
 	n = x.shape[0]
 	x = normalize(x)
 	x = np.hstack((np.array([1] * n)[:, np.newaxis], x))  # Add a column of 1s
@@ -89,15 +90,16 @@ def SGDSolver(phase, x, y, alpha_range=0, lam_range=0, nepochs=1000, epsilon=0.0
 	y = convert_y(y)
 	if phase == "Training":
 		w = np.array(w).reshape(-1, 1)
+		w = adjust_w(w, to_zero)
 		y_aux = transform_y(y, 2)
 		min_loss = 10**10
 		best_param2 = w
 		for alpha in np.logspace(np.log10(alpha_range[0]), np.log10(alpha_range[1]), 5):  # Logaritmic Scale
 			#print('\nNEW LEARNING RATE ', alpha)
-			for lambd in np.logspace(np.log10(lam_range[0]), np.log10(lam_range[1]), 5):
+			for lambd in np.logspace(np.log10(lam_range[0]), np.log10(lam_range[1]), 5):#5):
 				#print('\tNEW LAMBDA ', lambd)
-				w2, loss = SGD(x, y_aux, alpha, lambd, nepochs, 0, w)
-				#print(loss)
+				w2, loss = SGD(x, y_aux, alpha, lambd, nepochs, 0, w, to_zero)
+				#print(w2, loss)
 				if loss < min_loss:
 					min_loss = loss
 					best_param = w2
@@ -108,20 +110,29 @@ def SGDSolver(phase, x, y, alpha_range=0, lam_range=0, nepochs=1000, epsilon=0.0
 		#return w2, best_alpha, best_lambd
 
 		y_aux = transform_y(y, 1)
-		w1, loss = SGD(x, y_aux, best_alpha, best_lambd, 1000, 0, w)
+		w1, loss = SGD(x, y_aux, best_alpha, best_lambd, 1000, 0, w, to_zero)
 
 		y_aux = transform_y(y, 0)
-		w0, loss = SGD(x, y_aux, best_alpha, best_lambd, 1000, 0, w)
+		w0, loss = SGD(x, y_aux, best_alpha, best_lambd, 1000, 0, w, to_zero)
 
 		return [w0, w1, w2], best_alpha, best_lambd
 
 		predicted_y = predict(x, [w0, w1, w2])
-		#for i in range(len(predicted_y)):
-		#	print(predicted_y[i], y[i])
 	elif phase == "Validation":
 		return MSE(x, y, w)
 	elif phase == "Testing":
-		return predict(x, w)
+		predicted = predict(x, w)
+		#print(predicted.shape)
+		#print(confusion_matrix(y, predicted))
+		#print(accuracy_score(y, predicted))
+		return predicted
+
+
+
+def adjust_w(w, to_zero):  # sets weights with high correlation to 0
+	for index in to_zero:
+		w[index] = 0
+	return w
 
 
 def normalize(x):
@@ -171,10 +182,10 @@ def best_correlation(x, w):
 				if abs(corr[0][1]) >= 0.55: 
 					#print("eliminar", i, j)
 					delete.add(j)
-	for j in delete:
-		x = np.delete(x, j, 1)
-		w = np.delete(w, j).reshape(-1, 1)
-	return x, w
+	#for j in delete:
+	#	x = np.delete(x, j, 1)
+	#	w = np.delete(w, j).reshape(-1, 1)
+	return delete
 
 
 def SVMSolver(phase, x, y, clfs=[]):
